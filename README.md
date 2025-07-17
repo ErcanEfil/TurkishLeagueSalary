@@ -69,7 +69,7 @@ The remaining 14 clubs sit at or below ≈ €17 m, with Adana Demirspor bo
 
 **High variance:** The standard deviation is nearly the same magnitude as the mean, underscoring sharp disparities from club to club.
 
-![Total Salaries Per Club](assets\Total_Salaries.png)
+![Total Salaries Per Club](assets/Total_Salaries.png)
 
 ### 2. Spread and Statistical Analysis of Salaries
 
@@ -105,7 +105,7 @@ Running this query highlights the clubs with the largest salary spreads and the 
 
 **Relegation link:** All four relegated teams rank within the top eight for wage inequality—highlighting the sporting cost of financial imbalance.
 
-![CVofSalaries](assets\CVofSalaries.png)
+![CVofSalaries](assets/CVofSalaries.png)
 
 ### 3. Payment Per Positions
 
@@ -133,7 +133,7 @@ Executing this query ranks forwards, midfielders, defenders, and goalkeepers by 
 
 **Goalkeepers (≈ 6 %):** Command the smallest slice and the lowest average pay (€0.43 m).
 
-![TotalPositionSalary](assets\ByTotalPosition.png)
+![TotalPositionSalary](assets/ByTotalPosition.png)
 
 To discover which role each club pays the most, the following query sums salaries by position group inside every club, ranks them, and returns the top‑paid position.
 
