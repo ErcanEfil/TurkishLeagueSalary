@@ -1,13 +1,13 @@
 SELECT
-    p.player_name      AS player,
-    c.club_name        AS club,
+    p.player_name AS player,
+    c.club_name AS club,
     p.age,
     p.country,
-    f.gross_py_eur     AS salary_eur,
+    f.gross_py_eur AS salary_eur,
     ROUND(f.gross_py_eur / 1e6, 2) || ' mio' AS salary_mio
 FROM fact_contract  f
-JOIN dim_player     p USING (player_id)
-JOIN dim_club       c USING (club_id)
+JOIN dim_player p USING (player_id)
+JOIN dim_club c USING (club_id)
 WHERE gross_py_eur IS NOT NULL
 ORDER BY f.gross_py_eur DESC
 LIMIT 10;

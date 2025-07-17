@@ -2,29 +2,21 @@ WITH budget_split AS (
     SELECT
         CASE WHEN p.country = 'Turkey' THEN 'Domestic'
              ELSE 'Foreign'
-        END                AS player_type,
-
-        SUM(f.gross_py_eur)          AS total_eur,
-        COUNT(*)                     AS player_count 
+        END AS player_type,
+        SUM(f.gross_py_eur) AS total_eur,
+        COUNT(*) AS player_count 
     FROM fact_contract  f
-    JOIN dim_player     p USING (player_id)
+    JOIN dim_player p USING (player_id)
     WHERE f.gross_py_eur IS NOT NULL     
     GROUP BY player_type
 )
 
 SELECT
     player_type,
-
-    ROUND(total_eur / 1e6, 2) || ' mio'            AS total_mio,
-
-    ROUND((total_eur / player_count) / 1e6, 2)
-         || ' mio'                                 AS avg_per_player_mio,
-    ROUND(
-        total_eur * 100.0 / SUM(total_eur) OVER (),
-        1
-    )                                              AS pct_of_league,
-
-    player_count                                   AS player_count
+    ROUND(total_eur / 1e6, 2) || ' mio' AS total_mio,
+    ROUND((total_eur / player_count) / 1e6, 2) || ' mio' AS avg_per_player_mio,
+    ROUND(total_eur * 100.0 / SUM(total_eur) OVER (), 1) AS pct_of_league,
+    player_count  AS player_count
 FROM budget_split
 ORDER BY total_eur DESC;
 
@@ -42,4 +34,4 @@ Regulatory exposure.
 
 Talent-development signal.
 Budget skew suggests academies or domestic scouting aren’t supplying enough first-team quality, pushing clubs to buy ready-made imports.
-*/
+*/ 

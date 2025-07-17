@@ -1,30 +1,8 @@
 SELECT
     p.pos_group AS position,
-
-    CONCAT(
-        TO_CHAR(
-            ROUND( SUM(f.gross_py_eur) / 1e6 , 2 )::NUMERIC,
-            'FM999G990D00'
-        ),
-        ' mio'
-    ) AS total_salary_mio,
-
-
-    CONCAT(
-        TO_CHAR(
-            ROUND( (SUM(f.gross_py_eur) / COUNT(*)) / 1e6 , 2 )::NUMERIC,
-            'FM999G990D00'
-        ),
-        ' mio'
-    ) AS avg_per_player_mio,
-
-
-    ROUND(
-        SUM(f.gross_py_eur) * 100.0
-        / SUM(SUM(f.gross_py_eur)) OVER (),
-        1
-    ) AS pct_of_overall
-
+    CONCAT(TO_CHAR(ROUND( SUM(f.gross_py_eur) / 1e6 , 2 )::NUMERIC,'FM999G990D00'),' mio') AS total_salary_mio,
+    CONCAT(TO_CHAR(ROUND( (SUM(f.gross_py_eur) / COUNT(*)) / 1e6 , 2 )::NUMERIC,'FM999G990D00'),' mio') AS avg_per_player_mio,
+    ROUND(SUM(f.gross_py_eur) * 100.0 / SUM(SUM(f.gross_py_eur)) OVER (),1) AS pct_of_overall
 FROM fact_contract f
 JOIN dim_player  p USING (player_id)
 GROUP BY p.pos_group
@@ -39,14 +17,11 @@ WITH club_tot AS (
     FROM fact_contract
     GROUP BY club_id
 ),
-
-
 club_pos AS (
     SELECT
         c.club_name,
         p.pos_group,
-
-        SUM(f.gross_py_eur)                    AS pos_total_eur,  
+        SUM(f.gross_py_eur) AS pos_total_eur,  
         t.club_total_eur,                                       
         RANK() OVER (
             PARTITION BY c.club_name
@@ -58,52 +33,20 @@ club_pos AS (
     JOIN club_tot   t USING (club_id)
     GROUP BY c.club_name, p.pos_group, t.club_total_eur
 )
-
-
 SELECT
     club_name,
-    pos_group                       AS top_paid_position,
-
-    CONCAT(
-        TO_CHAR(
-            ROUND(pos_total_eur / 1e6 , 2)::NUMERIC,
-            'FM999G990D00'
-        ),
-        ' mio'
-    )                                AS pos_salary_mio,
-
-
-    ROUND(pos_total_eur * 100.0 / club_total_eur , 1)
-                                      AS pct_of_club
-
+    pos_group AS top_paid_position,
+    CONCAT(TO_CHAR(ROUND(pos_total_eur / 1e6 , 2)::NUMERIC,'FM999G990D00'),' mio') AS pos_salary_mio,
+    ROUND(pos_total_eur * 100.0 / club_total_eur , 1) AS pct_of_club
 FROM club_pos
 WHERE rnk = 1
 ORDER BY pos_total_eur DESC;
 
 SELECT
     p.pos_detail AS position,                
-    CONCAT(
-        TO_CHAR(
-            ROUND( SUM(f.gross_py_eur) / 1e6 , 2 )::NUMERIC,
-            'FM999G990D00'
-        ),
-        ' mio'
-    ) AS total_salary_mio,
-
-    CONCAT(
-        TO_CHAR(
-            ROUND( (SUM(f.gross_py_eur) / COUNT(*)) / 1e6 , 2 )::NUMERIC,
-            'FM999G990D00'
-        ),
-        ' mio'
-    ) AS avg_per_player_mio,
-
-    ROUND(
-        SUM(f.gross_py_eur) * 100.0
-        / SUM(SUM(f.gross_py_eur)) OVER (),
-        1
-    ) AS pct_of_overall
-
+    CONCAT(TO_CHAR(ROUND( SUM(f.gross_py_eur) / 1e6 , 2 )::NUMERIC,'FM999G990D00'),' mio') AS total_salary_mio,
+    CONCAT(TO_CHAR(ROUND( (SUM(f.gross_py_eur) / COUNT(*)) / 1e6 , 2 )::NUMERIC,'FM999G990D00'),' mio') AS avg_per_player_mio,
+    ROUND(SUM(f.gross_py_eur) * 100.0 / SUM(SUM(f.gross_py_eur)) OVER (),1) AS pct_of_overall
 FROM fact_contract f
 JOIN dim_player  p USING (player_id)
 GROUP BY p.pos_detail

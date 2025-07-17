@@ -1,22 +1,14 @@
 SELECT
-    ROUND(
-        CORR(p.age, f.gross_py_eur)::NUMERIC, 
-        3                                      
-    ) AS age_salary_corr
+    ROUND(CORR(p.age, f.gross_py_eur)::NUMERIC, 3) AS age_salary_corr
 FROM fact_contract  f
-JOIN dim_player     p USING (player_id);
-
+JOIN dim_player p USING (player_id);
 
 SELECT
-    p.age                                            AS age,         
-
+    p.age AS age,         
     ROUND( AVG(f.gross_py_eur) / 1e6 , 2 ) AS avg_salary_mio,
-
     ROUND( MIN(f.gross_py_eur) / 1e6 , 2 ) AS min_salary_mio,
     ROUND( MAX(f.gross_py_eur) / 1e6 , 2 ) AS max_salary_mio,
-
     COUNT(*) AS player_count
-
 FROM fact_contract  f
 JOIN dim_player     p USING (player_id)
 WHERE p.age IS NOT NULL            

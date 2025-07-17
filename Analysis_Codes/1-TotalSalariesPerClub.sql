@@ -1,15 +1,10 @@
 SELECT
     c.club_name,
-
-    CONCAT(TO_CHAR(ROUND(SUM(f.gross_py_eur) / 1000000, 2), 'FM999G990D00'), ' Mio') 
-        AS total_salary_mio,
-
-    CONCAT(TO_CHAR(ROUND(AVG(f.gross_py_eur) / 1000000, 2), 'FM999G990D00'), ' Mio') 
-        AS avg_salary_per_player_mio,
-
+    CONCAT(TO_CHAR(ROUND(SUM(f.gross_py_eur) / 1000000, 2), 'FM999G990D00'), ' Mio') AS total_salary_mio,
+    CONCAT(TO_CHAR(ROUND(AVG(f.gross_py_eur) / 1000000, 2), 'FM999G990D00'), ' Mio') AS avg_salary_per_player_mio,
     COUNT(*) AS player_count
 FROM fact_contract  f
-JOIN dim_club        c USING (club_id)
+JOIN dim_club c USING (club_id)
 GROUP BY c.club_name
 ORDER BY SUM(f.gross_py_eur) DESC;
 
