@@ -135,6 +135,9 @@ Executing this query ranks forwards, midfielders, defenders, and goalkeepers by 
 
 ![TotalPositionSalary](assets/ByTotalPosition.png)
 
+![SpecificPositionSalary](assets/PositionSalaries.png)
+
+
 To discover which role each club pays the most, the following query sums salaries by position group inside every club, ranks them, and returns the top‑paid position.
 
 ```sql
@@ -181,4 +184,130 @@ GROUP BY p.pos_detail
 ORDER BY SUM(f.gross_py_eur) DESC;
 ```
 
-Insight: Only three clubs—Trabzonspor, Kayserispor and Göztepe—allocate a larger share of their wage bill to defenders; every other team channels the biggest slice into its forward line.
+Insight: Only three clubs **—Trabzonspor, Kayserispor and Goztepe—** allocate a larger share of their wage bill to defenders; every other team channels the biggest slice into its forward line.
+
+
+### 4. Most Expensive 10 Players
+
+To surface the ten most expensive contracts in the league, I simply order every valid salary in descending order and limit the output to ten rows:
+
+```sql
+SELECT
+    p.player_name AS player,
+    c.club_name AS club,
+    p.age,
+    p.country,
+    f.gross_py_eur AS salary_eur,
+    ROUND(f.gross_py_eur / 1e6, 2) || ' mio' AS salary_mio
+FROM fact_contract  f
+JOIN dim_player p USING (player_id)
+JOIN dim_club c USING (club_id)
+WHERE gross_py_eur IS NOT NULL
+ORDER BY f.gross_py_eur DESC
+LIMIT 10;
+```
+
+Running this query yields a snapshot of the league’s true elite earners—helpful for benchmarking star wages and gauging how top‑heavy each club’s payroll might be.
+
+**Risk concentration:** Losing or under‑performing a €10 m‑a‑year star wipes out a big chunk of wage ROI; squad depth and contingency planning are critical.
+
+**Future wage inflation:** Heavy reliance on 30‑plus players foreshadows costly renewals; clubs must either budget for raises or start succession scouting early.
+
+**Local‑talent gap:** No Turkish player cracks the top‑10; strengthening domestic academy‑to‑first‑team pipelines could ease FX exposure and FFP pressure.
+
+**Club concentration:** Fenerbahçe owns 6 of 10 spots (positions 5‑10), while Galatasaray and Beşiktaş claim two each—making Fener the single‑largest spender at the elite end.
+
+**Age profile:** Average age is 31 years 3 months; only Victor Osimhen (26) and Youssef En‑Nesyri (27) are under 30, signalling clubs prefer peak‑age certainty over future upside.
+
+![Top10Player](assets/Top10Players.png)
+
+
+### 5. Correlation Between Salary and Age
+
+To measure how pay scales with age, I first calculate the Pearson correlation between a player’s age and their gross salary. Then I aggregate salary statistics for each age year to visualise patterns.
+
+```sql
+SELECT
+    ROUND(CORR(p.age, f.gross_py_eur)::NUMERIC, 3) AS age_salary_corr
+FROM fact_contract  f
+JOIN dim_player p USING (player_id);
+```
+
+**Correlation coefficient: +0.36** — salary rises with age but there’s plenty of scatter; performance, role, and club wealth still dominate pay.
+
+```sql
+SELECT
+    p.age AS age,         
+    ROUND( AVG(f.gross_py_eur) / 1e6 , 2 ) AS avg_salary_mio,
+    ROUND( MIN(f.gross_py_eur) / 1e6 , 2 ) AS min_salary_mio,
+    ROUND( MAX(f.gross_py_eur) / 1e6 , 2 ) AS max_salary_mio,
+    COUNT(*) AS player_count
+FROM fact_contract  f
+JOIN dim_player     p USING (player_id)
+WHERE p.age IS NOT NULL            
+  AND f.gross_py_eur IS NOT NULL   
+GROUP BY p.age
+ORDER BY p.age;
+```
+
+![AgeSalary](assets/AgeSalaryRelationship.png)
+
+**Density:** 75 % of all salaries remain below €1 m until age 27; beyond that, roughly 55 % of contracts break the €1 m line.
+
+**Super‑earners:** Every €7 m+ contract falls between ages 26 and 32—the sweet‑spot where star value and resale prospects intersect.
+
+### 6. Domestic VS Foreign Players
+
+To gauge how payroll is split between home‑grown and imported talent, I sum total salaries by nationality bucket and compute per‑player averages and league‑wide shares.
+
+```sql
+WITH budget_split AS (
+    SELECT
+        CASE WHEN p.country = 'Turkey' THEN 'Domestic'
+             ELSE 'Foreign'
+        END AS player_type,
+        SUM(f.gross_py_eur) AS total_eur,
+        COUNT(*) AS player_count 
+    FROM fact_contract  f
+    JOIN dim_player p USING (player_id)
+    WHERE f.gross_py_eur IS NOT NULL     
+    GROUP BY player_type
+)
+
+SELECT
+    player_type,
+    ROUND(total_eur / 1e6, 2) || ' mio' AS total_mio,
+    ROUND((total_eur / player_count) / 1e6, 2) || ' mio' AS avg_per_player_mio,
+    ROUND(total_eur * 100.0 / SUM(total_eur) OVER (), 1) AS pct_of_league,
+    player_count  AS player_count
+FROM budget_split
+ORDER BY total_eur DESC;
+```
+
+**Three‑quarters of the entire wage bill flows to foreign players**—far heavier than the ~60‑40 splits common in most European leagues.
+
+**Cost ratio:** Clubs spend roughly €3.2 on imports for every €1 on home‑grown talent, underscoring deep reliance on overseas recruits.
+
+**Efficiency gap:** If domestic players deliver comparable output for lower wages, some teams may be paying a costly “passport premium.”
+
+**Regulatory exposure:** Any tightening of foreign‑player quotas (federation or UEFA) would force a rapid wage‑bill restructure; FX risk is amplified when 76 % of contracts are paid in €/$ to overseas players.
+
+**Talent‑development signal:** The budget skew hints that academies and domestic scouting aren’t supplying enough first‑team quality, pushing clubs toward ready‑made imports.
+
+![DomesticForeignVS](assets/ForeignDomesticVS.png)
+
+# Conclusion
+
+### Insights
+
+**Club Wage Bills:** Fenerbahçe and Galatasaray alone absorb nearly 30 % of all salaries, and the top three clubs spend more than half of the league’s payroll.
+
+**Intra‑Club Wage Spread:** The average CV sits at 0.97; Kasımpaşa and Bodrum top the inequality chart, while Fenerbahçe and Kayserispor boast the most balanced structures.
+
+**Pay by Position:** Forwards eat up about 45 % of total wages, defenders 29 %, midfielders 20 %, and goalkeepers just 6 %.
+
+**Top‑Paid Players:** Ten super‑earners make €6.7–10 m each; Fenerbahçe holds six of those contracts, and the group’s average age is 31.
+
+**Age‑Salary Correlation:** A mild positive coefficient (+0.36) shows pay rises into the 26‑32 peak window, where every €7 m+ deal is located.
+
+**Domestic vs Foreign:** Foreign players take 76 % of payroll—roughly €3.2 spent on imports for every €1 on home‑grown talent.
